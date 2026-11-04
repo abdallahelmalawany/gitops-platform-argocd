@@ -6,7 +6,7 @@ metadata:
 spec:
   description: Cluster-wide platform components (ingress, certs, monitoring, policy)
   sourceRepos:
-    - https://github.com/example-org/gitops-platform-argocd.git
+    - https://github.com/abdallahelmalawany/gitops-platform-argocd.git
     - https://kubernetes.github.io/ingress-nginx
     - https://charts.jetstack.io
     - https://bitnami-labs.github.io/sealed-secrets
@@ -27,7 +27,7 @@ metadata:
 spec:
   description: Application workloads, one namespace per environment
   sourceRepos:
-    - https://github.com/example-org/gitops-platform-argocd.git
+    - https://github.com/abdallahelmalawany/gitops-platform-argocd.git
   destinations:
     - namespace: demo-*
       server: https://kubernetes.default.svc

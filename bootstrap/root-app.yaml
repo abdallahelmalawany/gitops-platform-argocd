@@ -9,7 +9,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/example-org/gitops-platform-argocd.git
+    repoURL: https://github.com/abdallahelmalawany/gitops-platform-argocd.git
     targetRevision: main
     path: apps
     directory:

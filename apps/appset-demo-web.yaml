@@ -26,7 +26,7 @@ spec:
     spec:
       project: workloads
       source:
-        repoURL: https://github.com/example-org/gitops-platform-argocd.git
+        repoURL: https://github.com/abdallahelmalawany/gitops-platform-argocd.git
         targetRevision: main
         path: charts/demo-web
         helm:

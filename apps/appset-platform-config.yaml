@@ -10,7 +10,7 @@ spec:
   goTemplateOptions: ["missingkey=error"]
   generators:
     - git:
-        repoURL: https://github.com/example-org/gitops-platform-argocd.git
+        repoURL: https://github.com/abdallahelmalawany/gitops-platform-argocd.git
         revision: main
         directories:
           - path: platform/config/*
@@ -22,7 +22,7 @@ spec:
     spec:
       project: platform
       source:
-        repoURL: https://github.com/example-org/gitops-platform-argocd.git
+        repoURL: https://github.com/abdallahelmalawany/gitops-platform-argocd.git
         targetRevision: main
         path: "{{ .path.path }}"
       destination:

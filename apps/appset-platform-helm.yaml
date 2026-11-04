@@ -58,7 +58,7 @@ spec:
             releaseName: "{{ .name }}"
             valueFiles:
               - "$values/platform/{{ .name }}/values.yaml"
-        - repoURL: https://github.com/example-org/gitops-platform-argocd.git
+        - repoURL: https://github.com/abdallahelmalawany/gitops-platform-argocd.git
           targetRevision: main
           ref: values
       destination:
