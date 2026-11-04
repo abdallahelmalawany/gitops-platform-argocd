@@ -1,0 +1,19 @@
+replicaCount: 2
+image:
+  tag: "1.27.3-alpine"
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+  hosts:
+    - host: demo.staging.example.com
+      path: /
+  tls:
+    enabled: true
+    secretName: demo-web-tls
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+pdb:
+  enabled: true
+  minAvailable: 1

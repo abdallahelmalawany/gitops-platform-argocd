@@ -1,0 +1,27 @@
+controller:
+  replicaCount: 1
+  ingressClassResource:
+    default: true
+  # kind/k3d: schedule on the node labelled ingress-ready and publish host ports
+  hostPort:
+    enabled: true
+  service:
+    type: NodePort
+  nodeSelector:
+    ingress-ready: "true"
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Equal
+      effect: NoSchedule
+  allowSnippetAnnotations: false
+  config:
+    hsts: "true"
+    ssl-protocols: "TLSv1.2 TLSv1.3"
+    server-tokens: "false"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false # enable once kube-prometheus-stack CRDs exist
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {memory: 256Mi}

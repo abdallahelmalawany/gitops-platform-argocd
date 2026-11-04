@@ -1,0 +1,56 @@
+# One Application per environment, generated from a list.
+# dev/staging auto-sync; prod is synced manually (promotion gate).
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: demo-web
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - env: dev
+            autoSync: "true"
+          - env: staging
+            autoSync: "true"
+          - env: prod
+            autoSync: "false"
+  template:
+    metadata:
+      name: "demo-web-{{ .env }}"
+      labels:
+        app.kubernetes.io/part-of: demo-web
+        environment: "{{ .env }}"
+    spec:
+      project: workloads
+      source:
+        repoURL: https://github.com/example-org/gitops-platform-argocd.git
+        targetRevision: main
+        path: charts/demo-web
+        helm:
+          releaseName: demo-web
+          valueFiles:
+            - "../../environments/{{ .env }}/values.yaml"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "demo-{{ .env }}"
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+        # The namespace is created by env-baseline-<env>; retry until it exists.
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+  templatePatch: |
+    {{- if eq .autoSync "true" }}
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+    {{- end }}

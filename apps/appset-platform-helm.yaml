@@ -1,0 +1,73 @@
+# Third-party platform charts. Chart comes from its upstream repo; values come from this repo
+# through a multi-source "$values" reference. Chart versions are pinned - verify before use.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-helm
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - name: ingress-nginx
+            repo: https://kubernetes.github.io/ingress-nginx
+            chart: ingress-nginx
+            version: 4.11.3
+            namespace: ingress-nginx
+            wave: "0"
+          - name: cert-manager
+            repo: https://charts.jetstack.io
+            chart: cert-manager
+            version: v1.16.2
+            namespace: cert-manager
+            wave: "0"
+          - name: sealed-secrets
+            repo: https://bitnami-labs.github.io/sealed-secrets
+            chart: sealed-secrets
+            version: 2.16.2
+            namespace: kube-system
+            wave: "0"
+          - name: kyverno
+            repo: https://kyverno.github.io/kyverno
+            chart: kyverno
+            version: 3.3.4
+            namespace: kyverno
+            wave: "0"
+          - name: monitoring
+            repo: https://prometheus-community.github.io/helm-charts
+            chart: kube-prometheus-stack
+            version: 66.2.1
+            namespace: monitoring
+            wave: "1"
+  template:
+    metadata:
+      name: "{{ .name }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{ .wave }}"
+      labels:
+        app.kubernetes.io/part-of: platform
+    spec:
+      project: platform
+      sources:
+        - repoURL: "{{ .repo }}"
+          chart: "{{ .chart }}"
+          targetRevision: "{{ .version }}"
+          helm:
+            releaseName: "{{ .name }}"
+            valueFiles:
+              - "$values/platform/{{ .name }}/values.yaml"
+        - repoURL: https://github.com/example-org/gitops-platform-argocd.git
+          targetRevision: main
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .namespace }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

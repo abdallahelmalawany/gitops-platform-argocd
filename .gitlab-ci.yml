@@ -1,0 +1,74 @@
+stages:
+  - lint
+  - validate
+  - security
+
+variables:
+  KUBERNETES_VERSION: "1.31.0"
+  DEMO_IMAGE: nginxinc/nginx-unprivileged:1.27.3-alpine
+
+default:
+  interruptible: true
+
+.rules: &rules
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+yamllint:
+  stage: lint
+  image: python:3.12-alpine
+  <<: *rules
+  script:
+    - pip install --no-cache-dir yamllint
+    - yamllint -c .yamllint.yaml .
+
+helm-lint:
+  stage: lint
+  image:
+    name: alpine/helm:3.16.3
+    entrypoint: [""]
+  <<: *rules
+  script:
+    - for env in dev staging prod; do helm lint charts/demo-web -f environments/$env/values.yaml; done
+
+kubeconform:
+  stage: validate
+  image:
+    name: alpine/k8s:1.31.3
+    entrypoint: [""]
+  <<: *rules
+  before_script:
+    - wget -qO- https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz -C /usr/local/bin kubeconform
+  script:
+    - |
+      CRDS='https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+      for env in dev staging prod; do
+        helm template demo-web charts/demo-web -f environments/$env/values.yaml \
+          | kubeconform -strict -summary -kubernetes-version "$KUBERNETES_VERSION"
+      done
+      for dir in environments/dev environments/staging environments/prod platform/config/*; do
+        kubectl kustomize "$dir" \
+          | kubeconform -strict -summary -ignore-missing-schemas -schema-location default \
+              -schema-location "$CRDS" -kubernetes-version "$KUBERNETES_VERSION"
+      done
+      kubeconform -strict -summary -ignore-missing-schemas -schema-location default \
+        -schema-location "$CRDS" apps bootstrap/root-app.yaml bootstrap/projects.yaml
+
+trivy-config:
+  stage: security
+  image:
+    name: aquasec/trivy:0.57.1
+    entrypoint: [""]
+  <<: *rules
+  script:
+    - trivy config --severity HIGH,CRITICAL --exit-code 1 .
+
+trivy-image:
+  stage: security
+  image:
+    name: aquasec/trivy:0.57.1
+    entrypoint: [""]
+  <<: *rules
+  script:
+    - trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$DEMO_IMAGE"

@@ -1,0 +1,34 @@
+# Namespace guardrails per environment (namespace, quota, limit range, default-deny).
+# One Application per directory under environments/ (base is excluded).
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: env-baseline
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/example-org/gitops-platform-argocd.git
+        revision: main
+        directories:
+          - path: environments/*
+          - path: environments/base
+            exclude: true
+  template:
+    metadata:
+      name: "env-baseline-{{ .path.basename }}"
+    spec:
+      project: platform
+      source:
+        repoURL: https://github.com/example-org/gitops-platform-argocd.git
+        targetRevision: main
+        path: "{{ .path.path }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "demo-{{ .path.basename }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

@@ -1,0 +1,28 @@
+# Alternative to the kustomize install: helm install argocd argo/argo-cd -n argocd -f values.yaml
+# Chart: https://argoproj.github.io/argo-helm  (pin a version you have verified)
+global:
+  domain: argocd.example.com
+configs:
+  params:
+    server.insecure: true
+  cm:
+    # Re-sync apps when Helm/Kustomize inputs change in Git
+    application.resourceTrackingMethod: annotation
+    timeout.reconciliation: 180s
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-staging
+    tls: true
+controller:
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {memory: 1Gi}
+repoServer:
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 512Mi}
+dex:
+  enabled: false

@@ -1,0 +1,17 @@
+# Image tag is bumped by CI / scripts/promote.sh.
+replicaCount: 1
+image:
+  tag: "1.27.3-alpine"
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
+  hosts:
+    - host: demo.dev.example.com
+      path: /
+  tls:
+    enabled: true
+    secretName: demo-web-tls
+autoscaling:
+  enabled: false
+pdb:
+  enabled: false

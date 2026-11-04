@@ -1,0 +1,37 @@
+# Plain-manifest platform config (ClusterIssuers, Kyverno policies, network defaults).
+# Applied after the Helm charts that provide their CRDs (sync-wave 2).
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-config
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/example-org/gitops-platform-argocd.git
+        revision: main
+        directories:
+          - path: platform/config/*
+  template:
+    metadata:
+      name: "config-{{ .path.basename }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "2"
+    spec:
+      project: platform
+      source:
+        repoURL: https://github.com/example-org/gitops-platform-argocd.git
+        targetRevision: main
+        path: "{{ .path.path }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+          - SkipDryRunOnMissingResource=true

@@ -1,0 +1,88 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  KUBERNETES_VERSION: "1.31.0"
+  DEMO_IMAGE: nginxinc/nginx-unprivileged:1.27.3-alpine
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: yamllint
+        run: |
+          pip install yamllint
+          yamllint -c .yamllint.yaml .
+      - uses: azure/setup-helm@v4
+      - name: helm lint (all environments)
+        run: |
+          for env in dev staging prod; do
+            helm lint charts/demo-web -f environments/$env/values.yaml
+          done
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+      - name: Render and validate chart
+        run: |
+          for env in dev staging prod; do
+            helm template demo-web charts/demo-web -f environments/$env/values.yaml \
+              | kubeconform -strict -summary -kubernetes-version "$KUBERNETES_VERSION"
+          done
+      - name: Render and validate kustomize overlays
+        run: |
+          for dir in environments/dev environments/staging environments/prod platform/config/*; do
+            kubectl kustomize "$dir" \
+              | kubeconform -strict -summary -ignore-missing-schemas \
+                  -schema-location default \
+                  -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+                  -kubernetes-version "$KUBERNETES_VERSION"
+          done
+      - name: Validate ArgoCD manifests
+        run: |
+          kubeconform -strict -summary -ignore-missing-schemas \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            apps bootstrap/root-app.yaml bootstrap/projects.yaml
+
+  trivy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy config scan (Helm, Kustomize, manifests)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: table
+      - name: Trivy image scan (demo image)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.DEMO_IMAGE }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table

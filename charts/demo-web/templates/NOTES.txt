@@ -1,0 +1,6 @@
+demo-web deployed as release {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+{{- if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+URL: http{{ if $.Values.ingress.tls.enabled }}s{{ end }}://{{ .host }}{{ .path }}
+{{- end }}
+{{- end }}

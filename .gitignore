@@ -1,0 +1,23 @@
+# Secrets / local state - never commit
+*.key
+*.pem
+*.kubeconfig
+kubeconfig*
+.env
+.env.*
+sealed-secrets-master*.yaml
+secret-*.yaml
+!platform/sealed-secrets/examples/*.yaml
+
+# Helm / tooling
+charts/*/charts/
+charts/*/*.tgz
+.helm-cache/
+.rendered/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

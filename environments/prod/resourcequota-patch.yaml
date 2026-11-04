@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute
+spec:
+  hard:
+    requests.cpu: "6"
+    requests.memory: 6Gi
+    limits.memory: 12Gi
+    pods: "50"

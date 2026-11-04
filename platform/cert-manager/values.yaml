@@ -1,0 +1,9 @@
+crds:
+  enabled: true
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: false
+resources:
+  requests: {cpu: 50m, memory: 64Mi}
+  limits: {memory: 128Mi}

@@ -1,0 +1,7 @@
+# Run argocd-server behind ingress-nginx, which terminates TLS.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+data:
+  server.insecure: "true"

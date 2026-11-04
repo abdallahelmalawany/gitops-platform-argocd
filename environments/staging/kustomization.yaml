@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+# The namespace transformer renames the Namespace object and places namespaced objects in it.
+namespace: demo-staging
+labels:
+  - pairs:
+      environment: staging
+    includeSelectors: false
+patches:
+  - path: resourcequota-patch.yaml
